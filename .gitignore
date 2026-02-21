@@ -1,0 +1,20 @@
+# Build
+build/
+bin/
+obj/
+*.xcode
+*.vst3
+*.component
+*.app
+*.exe
+*.dll
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
