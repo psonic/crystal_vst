@@ -23,7 +23,8 @@ struct Grain {
   int delaySamples = 0; // Samples to wait before starting playback
   bool waitingToStart = false;
 
-  float pan = 0.5f; // 0.0 = Left, 1.0 = Right
+  float panStart = 0.5f; 
+  float panDrift = 0.0f; 
 
   // Per-Grain Filter State (Tpt Filter / SVF)
   float v1 = 0.0f, v2 = 0.0f; 
@@ -107,8 +108,17 @@ struct Grain {
       env = (float)(duration - currentSample) / (float)decaySamples;
 
     float totalGain = window * env * amplitude;
-    float panL = std::cos(pan * juce::MathConstants<float>::halfPi);
-    float panR = std::sin(pan * juce::MathConstants<float>::halfPi);
+    
+    // Kinetic Panning with Bouncing
+    float p = panStart + panDrift * (float)currentSample;
+    // Fold/ping-pong logic to bounce between 0.0 and 1.0
+    int cycles = (int)p;
+    p = p - (float)cycles;
+    if (p < 0.0f) { p = -p; cycles = (int)p; p = p - (float)cycles; }
+    if (cycles % 2 != 0) p = 1.0f - p;
+    
+    float panL = std::cos(p * juce::MathConstants<float>::halfPi);
+    float panR = std::sin(p * juce::MathConstants<float>::halfPi);
 
     for (int channel = 0; channel < outputBuffer.getNumChannels(); ++channel) {
         float channelGain = (channel == 0) ? panL : (channel == 1 ? panR : 1.0f);

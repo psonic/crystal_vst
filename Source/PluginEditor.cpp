@@ -24,6 +24,7 @@ CrystalVstAudioProcessorEditor::CrystalVstAudioProcessorEditor(
   setupSlider(hpfFreqSlider, hpfFreqLabel, "HPF FREQ", "HPF_FREQ");
   setupSlider(grnFiltSlider, grnFiltLabel, "GRN FILT", "GRAIN_FILTER_DEPTH");
   setupSlider(grnResSlider, grnResLabel, "GRN RES", "GRAIN_FILTER_RES");
+  setupSlider(panSpeedSlider, panSpeedLabel, "PAN SPEED", "PAN_SPEED");
 
   densityAttachment =
       std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
@@ -73,6 +74,9 @@ CrystalVstAudioProcessorEditor::CrystalVstAudioProcessorEditor(
   grnResAttachment =
       std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
           audioProcessor.apvts, "GRAIN_FILTER_RES", grnResSlider);
+  panSpeedAttachment =
+      std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+          audioProcessor.apvts, "PAN_SPEED", panSpeedSlider);
 
   sourceSelector.addItem("LIVE INPUT", 1);
   sourceSelector.addItem("PSYCH CHORD", 2);
@@ -106,6 +110,7 @@ CrystalVstAudioProcessorEditor::CrystalVstAudioProcessorEditor(
   hpfFreqSlider.onValueChange();
   grnFiltSlider.onValueChange();
   grnResSlider.onValueChange();
+  panSpeedSlider.onValueChange();
 
   startTimerHz(30);
 }
@@ -233,7 +238,7 @@ void CrystalVstAudioProcessorEditor::resized() {
   grnResLabel.setBounds(grnResSlider.getBounds().translated(0, ch - 20).withHeight(20));
 
   // --- CLUSTER 3: SPACE / ENVELOPE (Bottom Center) ---
-  int spaceX = getWidth() / 2 - (cw * 3) / 2;
+  int spaceX = getWidth() / 2 - (cw * 4) / 2;
   int spaceY = 460;
   attackSlider.setBounds(spaceX, spaceY, cw, ch);
   attackLabel.setBounds(attackSlider.getBounds().translated(0, ch - 20).withHeight(20));
@@ -243,4 +248,7 @@ void CrystalVstAudioProcessorEditor::resized() {
 
   hpfFreqSlider.setBounds(spaceX + (cw + 10) * 2, spaceY, cw, ch);
   hpfFreqLabel.setBounds(hpfFreqSlider.getBounds().translated(0, ch - 20).withHeight(20));
+
+  panSpeedSlider.setBounds(spaceX + (cw + 10) * 3, spaceY, cw, ch);
+  panSpeedLabel.setBounds(panSpeedSlider.getBounds().translated(0, ch - 20).withHeight(20));
 }

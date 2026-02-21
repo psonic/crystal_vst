@@ -57,6 +57,7 @@ private:
   juce::Slider hpfFreqSlider;
   juce::Slider grnFiltSlider;
   juce::Slider grnResSlider;
+  juce::Slider panSpeedSlider;
   juce::ComboBox sourceSelector;
 
   std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>
@@ -91,6 +92,7 @@ private:
       grnFiltAttachment;
   std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>
       grnResAttachment;
+  std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> panSpeedAttachment;
   std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment>
       sourceAttachment;
 
@@ -110,6 +112,7 @@ private:
   juce::Label hpfFreqLabel;
   juce::Label grnFiltLabel;
   juce::Label grnResLabel;
+  juce::Label panSpeedLabel;
   juce::Label sourceLabel;
 
   void setupSlider(juce::Slider &slider, juce::Label &label,

@@ -222,8 +222,14 @@ void CrystalVstAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
           // Normalization logic: adjust for active grain count
           grain.amplitude = 1.0f / std::sqrt((float)maxGrains * 0.1f); 
           
-          // Random Pan
-          grain.pan = rand01(randomEngine);
+          // Balanced Kinetic Panning
+          float panSpeed = apvts.getRawParameterValue("PAN_SPEED")->load();
+          grain.panStart = rand01(randomEngine); // Random starting position
+          // Drift direction: 50% left-to-right, 50% right-to-left
+          float driftDir = (rand01(randomEngine) > 0.5f) ? 1.0f : -1.0f;
+          // Calculate drift per sample based on speed.
+          // At max speed (1.0), it should travel across the whole stereo field (0 to 1) in 1 second.
+          grain.panDrift = driftDir * (panSpeed / (float)getSampleRate());
 
           // Delay logic
           if (rand01(randomEngine) < delayProb && delayMaxBeats > 0.01f) {
@@ -370,6 +376,9 @@ CrystalVstAudioProcessor::createParameterLayout() {
       "GRAIN_FILTER_DEPTH", "Grn Filt Prob", 0.0f, 1.0f, 0.5f));
   params.push_back(std::make_unique<juce::AudioParameterFloat>(
       "GRAIN_FILTER_RES", "Grn Filt Res", 0.1f, 5.0f, 1.0f));
+
+  params.push_back(std::make_unique<juce::AudioParameterFloat>(
+      "PAN_SPEED", "Pan Speed", 0.0f, 1.0f, 0.0f));
 
   return {params.begin(), params.end()};
 }
