@@ -87,7 +87,7 @@ CrystalVstAudioProcessorEditor::CrystalVstAudioProcessorEditor(
   sourceLabel.setColour(juce::Label::textColourId, juce::Colours::magenta);
   addAndMakeVisible(sourceLabel);
 
-  setSize(800, 600);
+  setSize(900, 600);
   startTimerHz(30);
 }
 
@@ -160,7 +160,7 @@ void CrystalVstAudioProcessorEditor::resized() {
   int ch = 120;
 
   // --- CLUSTER 1: CORE (Center Left) ---
-  int coreX = 50;
+  int coreX = 60;
   int coreY = 180;
   densitySlider.setBounds(coreX, coreY, cw, ch);
   densityLabel.setBounds(densitySlider.getBounds().translated(0, ch - 20).withHeight(20));
@@ -181,7 +181,7 @@ void CrystalVstAudioProcessorEditor::resized() {
   lifeMaxLabel.setBounds(lifeMaxSlider.getBounds().translated(0, ch - 20).withHeight(20));
 
   // --- CLUSTER 2: MODULATION (Center Right) ---
-  int modX = 340;
+  int modX = 500; // Shifted right to accommodate wider UI
   int modY = 180;
   revSlider.setBounds(modX, modY, cw, ch);
   revLabel.setBounds(revSlider.getBounds().translated(0, ch - 20).withHeight(20));

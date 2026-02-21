@@ -212,12 +212,12 @@ void CrystalVstAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
               (writePosition - offset + circularBuffer.getNumSamples()) %
               circularBuffer.getNumSamples();
 
-          // Random pitch: -3 to +3 octaves
-          float pitchMin = apvts.getRawParameterValue("PITCH_MIN")->load();
-          float pitchMax = apvts.getRawParameterValue("PITCH_MAX")->load();
+          // Random pitch: -4 to +4 octaves (discrete)
+          int pitchMin = (int)apvts.getRawParameterValue("PITCH_MIN")->load();
+          int pitchMax = (int)apvts.getRawParameterValue("PITCH_MAX")->load();
           if (pitchMin > pitchMax) std::swap(pitchMin, pitchMax);
-          std::uniform_real_distribution<float> pitchDist(pitchMin, pitchMax);
-          grain.pitchRatio = std::pow(2.0f, pitchDist(randomEngine));
+          std::uniform_int_distribution<int> pitchDist(pitchMin, pitchMax);
+          grain.pitchRatio = std::pow(2.0f, (float)pitchDist(randomEngine));
 
           // Normalization logic: adjust for active grain count
           grain.amplitude = 1.0f / std::sqrt((float)maxGrains * 0.1f); 
@@ -326,20 +326,20 @@ juce::AudioProcessorValueTreeState::ParameterLayout
 CrystalVstAudioProcessor::createParameterLayout() {
   std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
 
-  // DENSITY: Higher = More grains (grains per beat)
+  // DENSITY: Higher = More grains (grains per beat). Skew 0.5 for more resolution at low/mid density
   params.push_back(std::make_unique<juce::AudioParameterFloat>(
-      "DENSITY", "Density (grains/beat)", 0.25f, 16.0f, 2.0f));
+      "DENSITY", "Density (grains/beat)", juce::NormalisableRange<float>(0.25f, 16.0f, 0.01f, 0.5f), 2.0f));
   // LIFE_MIN/MAX: Min and Max grain duration in beats
   params.push_back(std::make_unique<juce::AudioParameterFloat>(
       "LIFE_MIN", "Min Life (beats)", 0.0625f, 2.0f, 0.25f));
   params.push_back(std::make_unique<juce::AudioParameterFloat>(
       "LIFE_MAX", "Max Life (beats)", 0.0625f, 2.0f, 1.0f));
 
-  // PITCH_MIN/MAX: Range in octaves (-3 to +3)
-  params.push_back(std::make_unique<juce::AudioParameterFloat>(
-      "PITCH_MIN", "Min Pitch (oct)", -3.0f, 3.0f, 0.0f));
-  params.push_back(std::make_unique<juce::AudioParameterFloat>(
-      "PITCH_MAX", "Max Pitch (oct)", -3.0f, 3.0f, 0.0f));
+  // PITCH_MIN/MAX: Discrete Range in octaves (-4 to +4)
+  params.push_back(std::make_unique<juce::AudioParameterInt>(
+      "PITCH_MIN", "Min Pitch (oct)", -4, 4, 0));
+  params.push_back(std::make_unique<juce::AudioParameterInt>(
+      "PITCH_MAX", "Max Pitch (oct)", -4, 4, 0));
 
   params.push_back(std::make_unique<juce::AudioParameterFloat>(
       "MIX", "Mix", 0.0f, 1.0f, 0.5f));
