@@ -8,22 +8,22 @@ CrystalVstAudioProcessorEditor::CrystalVstAudioProcessorEditor(
   addAndMakeVisible(inputMeter);
   addAndMakeVisible(outputMeter);
 
-  setupSlider(densitySlider, densityLabel, "DENSITY");
-  setupSlider(pitchMinSlider, pitchMinLabel, "PITCH MIN");
-  setupSlider(pitchMaxSlider, pitchMaxLabel, "PITCH MAX");
-  setupSlider(lifeMinSlider, lifeMinLabel, "LIFE MIN");
-  setupSlider(lifeMaxSlider, lifeMaxLabel, "LIFE MAX");
-  setupSlider(mixSlider, mixLabel, "MIX");
-  setupSlider(gainSlider, gainLabel, "GAIN");
-  setupSlider(revSlider, revLabel, "REVERSE");
-  setupSlider(attackSlider, attackLabel, "ATTACK");
-  setupSlider(decaySlider, decayLabel, "DECAY");
-  setupSlider(loopCycleSlider, loopCycleLabel, "LOOP CYCLE");
-  setupSlider(delayProbSlider, delayProbLabel, "DELAY %");
-  setupSlider(delayMaxSlider, delayMaxLabel, "DELAY MAX");
-  setupSlider(hpfFreqSlider, hpfFreqLabel, "HPF FREQ");
-  setupSlider(grnFiltSlider, grnFiltLabel, "GRN FILT");
-  setupSlider(grnResSlider, grnResLabel, "GRN RES");
+  setupSlider(densitySlider, densityLabel, "DENSITY", "DENSITY");
+  setupSlider(pitchMinSlider, pitchMinLabel, "PITCH MIN", "PITCH_MIN");
+  setupSlider(pitchMaxSlider, pitchMaxLabel, "PITCH MAX", "PITCH_MAX");
+  setupSlider(lifeMinSlider, lifeMinLabel, "LIFE MIN", "LIFE_MIN");
+  setupSlider(lifeMaxSlider, lifeMaxLabel, "LIFE MAX", "LIFE_MAX");
+  setupSlider(mixSlider, mixLabel, "MIX", "MIX");
+  setupSlider(gainSlider, gainLabel, "GAIN", "GAIN");
+  setupSlider(revSlider, revLabel, "REVERSE", "REVERSE_PROB");
+  setupSlider(attackSlider, attackLabel, "ATTACK", "ATTACK");
+  setupSlider(decaySlider, decayLabel, "DECAY", "DECAY");
+  setupSlider(loopCycleSlider, loopCycleLabel, "LOOP CYCLE", "LOOP_BEATS");
+  setupSlider(delayProbSlider, delayProbLabel, "DELAY %", "DELAY_PROB");
+  setupSlider(delayMaxSlider, delayMaxLabel, "DELAY MAX", "DELAY_MAX");
+  setupSlider(hpfFreqSlider, hpfFreqLabel, "HPF FREQ", "HPF_FREQ");
+  setupSlider(grnFiltSlider, grnFiltLabel, "GRN FILT", "GRAIN_FILTER_DEPTH");
+  setupSlider(grnResSlider, grnResLabel, "GRN RES", "GRAIN_FILTER_RES");
 
   densityAttachment =
       std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
@@ -88,6 +88,25 @@ CrystalVstAudioProcessorEditor::CrystalVstAudioProcessorEditor(
   addAndMakeVisible(sourceLabel);
 
   setSize(900, 600);
+
+  // Trigger initial label updates
+  densitySlider.onValueChange();
+  pitchMinSlider.onValueChange();
+  pitchMaxSlider.onValueChange();
+  lifeMinSlider.onValueChange();
+  lifeMaxSlider.onValueChange();
+  mixSlider.onValueChange();
+  gainSlider.onValueChange();
+  revSlider.onValueChange();
+  attackSlider.onValueChange();
+  decaySlider.onValueChange();
+  loopCycleSlider.onValueChange();
+  delayProbSlider.onValueChange();
+  delayMaxSlider.onValueChange();
+  hpfFreqSlider.onValueChange();
+  grnFiltSlider.onValueChange();
+  grnResSlider.onValueChange();
+
   startTimerHz(30);
 }
 
@@ -104,7 +123,8 @@ void CrystalVstAudioProcessorEditor::timerCallback() {
 
 void CrystalVstAudioProcessorEditor::setupSlider(juce::Slider &slider,
                                                  juce::Label &label,
-                                                 const juce::String &name) {
+                                                 const juce::String &name,
+                                                 const juce::String &paramId) {
   slider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
   slider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
   
@@ -115,10 +135,21 @@ void CrystalVstAudioProcessorEditor::setupSlider(juce::Slider &slider,
   
   addAndMakeVisible(slider);
 
-  label.setText(name, juce::dontSendNotification);
   label.setJustificationType(juce::Justification::centred);
   label.setFont(juce::FontOptions(14.0f, juce::Font::bold));
   label.setColour(juce::Label::textColourId, juce::Colours::cyan);
+  
+  // Dynamic Label Update
+  slider.onValueChange = [this, &slider, &label, name, paramId] {
+      juce::String valStr;
+      if (auto* param = audioProcessor.apvts.getParameter(paramId)) {
+          valStr = param->getCurrentValueAsText();
+      } else {
+          valStr = juce::String(slider.getValue(), 2);
+      }
+      label.setText(name + ": " + valStr, juce::dontSendNotification);
+  };
+  
   addAndMakeVisible(label);
 }
 

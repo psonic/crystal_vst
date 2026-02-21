@@ -113,7 +113,7 @@ private:
   juce::Label sourceLabel;
 
   void setupSlider(juce::Slider &slider, juce::Label &label,
-                   const juce::String &name);
+                   const juce::String &name, const juce::String &paramId);
 
   JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CrystalVstAudioProcessorEditor)
 };

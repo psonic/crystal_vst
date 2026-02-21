@@ -362,8 +362,9 @@ CrystalVstAudioProcessor::createParameterLayout() {
   params.push_back(std::make_unique<juce::AudioParameterChoice>(
       "INPUT_SOURCE", "Input Source", juce::StringArray{"Live", "Chord"}, 0));
 
+  // HPF_FREQ: Skew 0.3 for better precision in low frequencies
   params.push_back(std::make_unique<juce::AudioParameterFloat>(
-      "HPF_FREQ", "HPF Freq", 20.0f, 5000.0f, 20.0f));
+      "HPF_FREQ", "HPF Freq", juce::NormalisableRange<float>(20.0f, 5000.0f, 1.0f, 0.3f), 20.0f));
 
   params.push_back(std::make_unique<juce::AudioParameterFloat>(
       "GRAIN_FILTER_DEPTH", "Grn Filt Prob", 0.0f, 1.0f, 0.5f));
