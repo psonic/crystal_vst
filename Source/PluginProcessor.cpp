@@ -92,7 +92,8 @@ void CrystalVstAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
     buffer.clear(i, 0, buffer.getNumSamples());
 
   float density = apvts.getRawParameterValue("DENSITY")->load(); // Grains per beat
-  float lifeMaxBeats = apvts.getRawParameterValue("LIFE_BEATS")->load();
+  float lifeMin = apvts.getRawParameterValue("LIFE_MIN")->load();
+  float lifeMax = apvts.getRawParameterValue("LIFE_MAX")->load();
   float loopCycleMaxBeats = apvts.getRawParameterValue("LOOP_BEATS")->load();
   float delayProb = apvts.getRawParameterValue("DELAY_PROB")->load();
   float delayMaxBeats = apvts.getRawParameterValue("DELAY_MAX")->load();
@@ -180,10 +181,9 @@ void CrystalVstAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
       for (auto &grain : grains) {
         if (!grain.active && !grain.waitingToStart) {
           // Select Random Duration (Life) within range
-          std::vector<double> validLifeDivs;
-          for (auto d : divisions) if (d <= lifeMaxBeats) validLifeDivs.push_back(d);
-          double lifeDiv = validLifeDivs.empty() ? lifeMaxBeats : validLifeDivs[(size_t)std::uniform_int_distribution<int>(0, (int)validLifeDivs.size()-1)(randomEngine)];
-          grain.duration = (int)(samplesPerBeat * lifeDiv);
+          if (lifeMin > lifeMax) std::swap(lifeMin, lifeMax); // Safety
+          std::uniform_real_distribution<float> lifeDist(lifeMin, lifeMax);
+          grain.duration = (int)(samplesPerBeat * lifeDist(randomEngine));
 
           grain.attackSamples = attackSamples;
           grain.decaySamples = decaySamples;
@@ -212,10 +212,12 @@ void CrystalVstAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
               (writePosition - offset + circularBuffer.getNumSamples()) %
               circularBuffer.getNumSamples();
 
-          // Random pitch: -1 octave, 0, or +1 octave
-          std::uniform_int_distribution<int> pitchDist(-1, 1);
-          int octave = pitchDist(randomEngine);
-          grain.pitchRatio = std::pow(2.0f, (float)octave);
+          // Random pitch: -3 to +3 octaves
+          float pitchMin = apvts.getRawParameterValue("PITCH_MIN")->load();
+          float pitchMax = apvts.getRawParameterValue("PITCH_MAX")->load();
+          if (pitchMin > pitchMax) std::swap(pitchMin, pitchMax);
+          std::uniform_real_distribution<float> pitchDist(pitchMin, pitchMax);
+          grain.pitchRatio = std::pow(2.0f, pitchDist(randomEngine));
 
           // Normalization logic: adjust for active grain count
           grain.amplitude = 1.0f / std::sqrt((float)maxGrains * 0.1f); 
