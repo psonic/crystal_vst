@@ -42,7 +42,10 @@ private:
   LevelMeter outputMeter;
 
   juce::Slider densitySlider;
-  juce::Slider lifeSlider;
+  juce::Slider pitchMinSlider;
+  juce::Slider pitchMaxSlider;
+  juce::Slider lifeMinSlider;
+  juce::Slider lifeMaxSlider;
   juce::Slider mixSlider;
   juce::Slider gainSlider;
   juce::Slider revSlider;
@@ -59,7 +62,13 @@ private:
   std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>
       densityAttachment;
   std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>
-      lifeAttachment;
+      pitchMinAttachment;
+  std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>
+      pitchMaxAttachment;
+  std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>
+      lifeMinAttachment;
+  std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>
+      lifeMaxAttachment;
   std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>
       mixAttachment;
   std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>
@@ -86,7 +95,10 @@ private:
       sourceAttachment;
 
   juce::Label densityLabel;
-  juce::Label lifeLabel;
+  juce::Label pitchMinLabel;
+  juce::Label pitchMaxLabel;
+  juce::Label lifeMinLabel;
+  juce::Label lifeMaxLabel;
   juce::Label mixLabel;
   juce::Label gainLabel;
   juce::Label revLabel;

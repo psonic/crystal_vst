@@ -327,9 +327,18 @@ CrystalVstAudioProcessor::createParameterLayout() {
   // DENSITY: Higher = More grains (grains per beat)
   params.push_back(std::make_unique<juce::AudioParameterFloat>(
       "DENSITY", "Density (grains/beat)", 0.25f, 16.0f, 2.0f));
-  // LIFE_BEATS: Max grain duration in beats (picked randomly within)
+  // LIFE_MIN/MAX: Min and Max grain duration in beats
   params.push_back(std::make_unique<juce::AudioParameterFloat>(
-      "LIFE_BEATS", "Max Life (beats)", 0.05f, 16.0f, 1.0f));
+      "LIFE_MIN", "Min Life (beats)", 0.0625f, 2.0f, 0.25f));
+  params.push_back(std::make_unique<juce::AudioParameterFloat>(
+      "LIFE_MAX", "Max Life (beats)", 0.0625f, 2.0f, 1.0f));
+
+  // PITCH_MIN/MAX: Range in octaves (-3 to +3)
+  params.push_back(std::make_unique<juce::AudioParameterFloat>(
+      "PITCH_MIN", "Min Pitch (oct)", -3.0f, 3.0f, 0.0f));
+  params.push_back(std::make_unique<juce::AudioParameterFloat>(
+      "PITCH_MAX", "Max Pitch (oct)", -3.0f, 3.0f, 0.0f));
+
   params.push_back(std::make_unique<juce::AudioParameterFloat>(
       "MIX", "Mix", 0.0f, 1.0f, 0.5f));
   params.push_back(std::make_unique<juce::AudioParameterFloat>(

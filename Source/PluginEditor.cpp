@@ -9,7 +9,10 @@ CrystalVstAudioProcessorEditor::CrystalVstAudioProcessorEditor(
   addAndMakeVisible(outputMeter);
 
   setupSlider(densitySlider, densityLabel, "DENSITY");
-  setupSlider(lifeSlider, lifeLabel, "GRAIN LIFE");
+  setupSlider(pitchMinSlider, pitchMinLabel, "PITCH MIN");
+  setupSlider(pitchMaxSlider, pitchMaxLabel, "PITCH MAX");
+  setupSlider(lifeMinSlider, lifeMinLabel, "LIFE MIN");
+  setupSlider(lifeMaxSlider, lifeMaxLabel, "LIFE MAX");
   setupSlider(mixSlider, mixLabel, "MIX");
   setupSlider(gainSlider, gainLabel, "GAIN");
   setupSlider(revSlider, revLabel, "REVERSE");
@@ -25,9 +28,18 @@ CrystalVstAudioProcessorEditor::CrystalVstAudioProcessorEditor(
   densityAttachment =
       std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
           audioProcessor.apvts, "DENSITY", densitySlider);
-  lifeAttachment =
+  pitchMinAttachment =
       std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-          audioProcessor.apvts, "LIFE_BEATS", lifeSlider);
+          audioProcessor.apvts, "PITCH_MIN", pitchMinSlider);
+  pitchMaxAttachment =
+      std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+          audioProcessor.apvts, "PITCH_MAX", pitchMaxSlider);
+  lifeMinAttachment =
+      std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+          audioProcessor.apvts, "LIFE_MIN", lifeMinSlider);
+  lifeMaxAttachment =
+      std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+          audioProcessor.apvts, "LIFE_MAX", lifeMaxSlider);
   mixAttachment =
       std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
           audioProcessor.apvts, "MIX", mixSlider);
@@ -130,7 +142,7 @@ void CrystalVstAudioProcessorEditor::paint(juce::Graphics &g) {
   
   g.setColour(juce::Colours::magenta.withAlpha(0.5f));
   g.setFont(juce::FontOptions(14.0f));
-  g.drawText("v13 KINETIC FILT", 20, 55, 400, 20, juce::Justification::left);
+  g.drawText("v14 KINETIC RANGES", 20, 55, 400, 20, juce::Justification::left);
 }
 
 void CrystalVstAudioProcessorEditor::resized() {
@@ -153,14 +165,20 @@ void CrystalVstAudioProcessorEditor::resized() {
   densitySlider.setBounds(coreX, coreY, cw, ch);
   densityLabel.setBounds(densitySlider.getBounds().translated(0, ch - 20).withHeight(20));
 
-  lifeSlider.setBounds(coreX + cw + 10, coreY, cw, ch);
-  lifeLabel.setBounds(lifeSlider.getBounds().translated(0, ch - 20).withHeight(20));
+  pitchMinSlider.setBounds(coreX + cw + 10, coreY, cw, ch);
+  pitchMinLabel.setBounds(pitchMinSlider.getBounds().translated(0, ch - 20).withHeight(20));
 
-  gainSlider.setBounds(coreX, coreY + ch + 10, cw, ch);
-  gainLabel.setBounds(gainSlider.getBounds().translated(0, ch - 20).withHeight(20));
+  pitchMaxSlider.setBounds(coreX + (cw + 10) * 2, coreY, cw, ch);
+  pitchMaxLabel.setBounds(pitchMaxSlider.getBounds().translated(0, ch - 20).withHeight(20));
 
-  mixSlider.setBounds(coreX + cw + 10, coreY + ch + 10, cw, ch);
+  mixSlider.setBounds(coreX, coreY + ch + 10, cw, ch);
   mixLabel.setBounds(mixSlider.getBounds().translated(0, ch - 20).withHeight(20));
+
+  lifeMinSlider.setBounds(coreX + cw + 10, coreY + ch + 10, cw, ch);
+  lifeMinLabel.setBounds(lifeMinSlider.getBounds().translated(0, ch - 20).withHeight(20));
+
+  lifeMaxSlider.setBounds(coreX + (cw + 10) * 2, coreY + ch + 10, cw, ch);
+  lifeMaxLabel.setBounds(lifeMaxSlider.getBounds().translated(0, ch - 20).withHeight(20));
 
   // --- CLUSTER 2: MODULATION (Center Right) ---
   int modX = 340;
