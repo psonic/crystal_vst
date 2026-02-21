@@ -38,7 +38,10 @@ Appena un grano nasce, sceglie un punto casuale nel Circular Buffer da cui inizi
 Durante la sua esistenza, il frammento audio subisce diverse alterazioni:
 1.  **PITCH MIN / MAX (Oct)**: L'audio viene riprodotto a velocità diversa (Pitch-shifting) per raggiungere le ottave selezionate (da -4 a +4).
 2.  **REVERSE**: C'è una percentuale di probabilità che il nastro venga letto al contrario.
-3.  **LOOP CYCLE**: Se attivato, il grano invece di riprodurre il frammento dritto, intrappola una piccolissima porzione (es. 1/16) e la ripete a ciclo continuo per tutta la durata della sua "vita". Abbiamo inserito un micro-crossfade matematico per evitare i click ai bordi del loop.
+3.  **LOOP CYCLE**: *ATTENZIONE: Questo parametro agisce internamente al grano ed è completamente diverso da LIFE.*
+    - Che differenza c'è con **LIFE**?
+      - **LIFE** decide *quanto a lungo il grano esisterà nel mondo*. Ad esempio: "Questo grano deve durare 1/4 di battuta, poi deve spegnersi e sparire".
+      - **LOOP CYCLE** decide *cosa suona il grano mentre è in vita*. Se Loop Cycle è disattivato (a 0), il grano riproduce un pezzo di nastro pari alla sua LIFE. Se Loop Cycle è attivato (es. a 1/16), il grano intrappola per sempre una frazione microscopica di nastro (lunga 1/16) e la ripete a mitraglietta finché la sua LIFE non si esaurisce. Abbiamo inserito un micro-crossfade matematico per evitare i click ai bordi di questo micro-loop.
 4.  **GRN FILT (Filtro Dinamico)**: Se attivato, al grano viene applicato un filtro risonante che "spazza" le frequenze autonomamente dall'inizio alla fine della sua vita.
 5.  **PAN SPEED**: Il suono del grano non è statico. Nasce in un punto stereo casuale e, a seconda del Pan Speed, "viaggia" da sinistra a destra (o viceversa), rimbalzando invisibilmente se tocca i bordi estremi.
 6.  **DELAY MAX / %**: Alcuni grani, invece di suonare subito appena nati, vengono messi "in pausa" e attendono una divisione ritmica esatta (es. un ottavo o un quarto) prima di esplodere, creando poliritmie.
