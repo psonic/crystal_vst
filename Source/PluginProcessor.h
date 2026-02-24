@@ -111,11 +111,14 @@ struct Grain {
     
     // Kinetic Panning with Bouncing
     float p = panStart + panDrift * (float)currentSample;
-    // Fold/ping-pong logic to bounce between 0.0 and 1.0
-    int cycles = (int)p;
-    p = p - (float)cycles;
-    if (p < 0.0f) { p = -p; cycles = (int)p; p = p - (float)cycles; }
-    if (cycles % 2 != 0) p = 1.0f - p;
+    
+    // Robust ping-pong fold between 0.0 and 1.0
+    // Shift to guaranteed positive domain, wrap to 2.0, fold at 1.0
+    p = p + 10000.0f; 
+    p = std::fmod(p, 2.0f);
+    if (p > 1.0f) {
+        p = 2.0f - p;
+    }
     
     float panL = std::cos(p * juce::MathConstants<float>::halfPi);
     float panR = std::sin(p * juce::MathConstants<float>::halfPi);
