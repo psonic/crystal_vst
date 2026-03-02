@@ -9,6 +9,10 @@ obj/
 *.exe
 *.dll
 
+# Allow pushing build artifacts in Releases folder
+!Releases/
+!Releases/**
+
 # IDE
 .vscode/
 .idea/
