@@ -20,7 +20,7 @@ CrystalVstAudioProcessor::~CrystalVstAudioProcessor() {}
 void CrystalVstAudioProcessor::prepareToPlay(double sampleRate,
                                              int samplesPerBlock) {
   juce::ignoreUnused(samplesPerBlock);
-  circularBuffer.setSize(getTotalNumInputChannels(), (int)(sampleRate * 2.0));
+  circularBuffer.setSize(getTotalNumInputChannels(), (int)(sampleRate * 10.0));
   circularBuffer.clear();
   writePosition = 0;
   samplesSinceLastGrain = 0;
@@ -43,11 +43,8 @@ void CrystalVstAudioProcessor::prepareToPlay(double sampleRate,
   phaser.setCentreFrequency(1000.0f);
   phaser.setFeedback(0.5f);
   
-  filterChain.prepare(spec);
-
   smoothedGain.reset(sampleRate, 0.1);
   smoothedMix.reset(sampleRate, 0.1);
-  smoothedHpfFreq.reset(sampleRate, 0.1);
   smoothedReverbRoom.reset(sampleRate, 0.1);
   smoothedPhaserFreq.reset(sampleRate, 0.1);
   smoothedPhaserFeedback.reset(sampleRate, 0.1);
@@ -56,13 +53,9 @@ void CrystalVstAudioProcessor::prepareToPlay(double sampleRate,
   
   smoothedGain.setCurrentAndTargetValue(apvts.getRawParameterValue("GAIN")->load());
   smoothedMix.setCurrentAndTargetValue(apvts.getRawParameterValue("MIX")->load());
-  smoothedHpfFreq.setCurrentAndTargetValue(apvts.getRawParameterValue("HPF_FREQ")->load());
   smoothedReverbRoom.setCurrentAndTargetValue(0.5f);
   smoothedPhaserFreq.setCurrentAndTargetValue(1000.0f);
   smoothedPhaserFeedback.setCurrentAndTargetValue(0.5f);
-
-  auto hpfFreq = apvts.getRawParameterValue("HPF_FREQ")->load();
-  *filterChain.get<0>().coefficients = *juce::dsp::IIR::Coefficients<float>::makeHighPass(sampleRate, hpfFreq, 0.707f);
 }
 
 void CrystalVstAudioProcessor::releaseResources() {
@@ -103,14 +96,8 @@ void CrystalVstAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
   float revProb = apvts.getRawParameterValue("REVERSE_PROB")->load();
   float attackMs = apvts.getRawParameterValue("ATTACK")->load();
   float decayMs = apvts.getRawParameterValue("DECAY")->load();
-  float hpfFreq = apvts.getRawParameterValue("HPF_FREQ")->load();
-
   smoothedGain.setTargetValue(gain);
   smoothedMix.setTargetValue(mix);
-  smoothedHpfFreq.setTargetValue(hpfFreq);
-
-  // Update HPF ( Butterworth 0.707 resonance fixed)
-  *filterChain.get<0>().coefficients = *juce::dsp::IIR::Coefficients<float>::makeHighPass(getSampleRate(), smoothedHpfFreq.getNextValue(), 0.707f);
 
   double bpm = 120.0;
   if (auto* playHead = getPlayHead()) {
@@ -140,11 +127,13 @@ void CrystalVstAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
   juce::AudioBuffer<float> grainBlock(totalNumOutputChannels, buffer.getNumSamples());
   grainBlock.clear();
 
+  float morphProb = apvts.getRawParameterValue("MORPH_PROB")->load();
+
   // Process grains in parallel/block instead of per-sample for efficiency
   for (auto &grain : grains) {
     if (grain.active || grain.waitingToStart) {
         for (int i = 0; i < buffer.getNumSamples(); ++i) {
-            grain.process(circularBuffer, grainBlock, i, circularBuffer.getNumSamples(), getSampleRate());
+            grain.process(circularBuffer, grainBlock, i, circularBuffer.getNumSamples(), getSampleRate(), morphProb, randomEngine);
         }
     }
   }
@@ -203,10 +192,10 @@ void CrystalVstAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
               grain.loopDuration = 0;
           }
 
-          // Random position in the past (up to 1.5 seconds)
+          // Random position in the past (up to 8 seconds)
           // ANTI-GLITCH: Added safety offset (512 samples) to avoid reading what we are currently writing
           std::uniform_int_distribution<int> posDist(
-              512, (int)(getSampleRate() * 1.5));
+              512, (int)(getSampleRate() * 8.0));
           int offset = posDist(randomEngine);
           grain.startSample =
               (writePosition - offset + circularBuffer.getNumSamples()) %
@@ -291,11 +280,8 @@ void CrystalVstAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
       writePosition = 0;
   }
 
-  // Apply Effects
   juce::dsp::AudioBlock<float> block(buffer);
   juce::dsp::ProcessContextReplacing<float> context(block);
-
-  filterChain.process(context);
 
   // Randomize Reverb Room slightly over time for psychedelic feel
   if (rand01(randomEngine) < 0.05f) { // 5% chance per block to change decay
@@ -337,9 +323,9 @@ CrystalVstAudioProcessor::createParameterLayout() {
       "DENSITY", "Density (grains/beat)", juce::NormalisableRange<float>(0.25f, 16.0f, 0.01f, 0.5f), 2.0f));
   // LIFE_MIN/MAX: Min and Max grain duration in beats
   params.push_back(std::make_unique<juce::AudioParameterFloat>(
-      "LIFE_MIN", "Min Life (beats)", 0.0625f, 2.0f, 0.25f));
+      "LIFE_MIN", "Min Life (beats)", 0.0625f, 8.0f, 0.25f));
   params.push_back(std::make_unique<juce::AudioParameterFloat>(
-      "LIFE_MAX", "Max Life (beats)", 0.0625f, 2.0f, 1.0f));
+      "LIFE_MAX", "Max Life (beats)", 0.0625f, 8.0f, 1.0f));
 
   // PITCH_MIN/MAX: Discrete Range in octaves (-4 to +4)
   params.push_back(std::make_unique<juce::AudioParameterInt>(
@@ -359,18 +345,14 @@ CrystalVstAudioProcessor::createParameterLayout() {
       "DECAY", "Envelope Decay (ms)", 0.0f, 100.0f, 10.0f));
   // LOOP_BEATS: Max loop cycle in beats (picked randomly within)
   params.push_back(std::make_unique<juce::AudioParameterFloat>(
-      "LOOP_BEATS", "Max Loop (beats)", 0.0f, 8.0f, 0.25f));
+      "LOOP_BEATS", "Max Loop (beats)", 0.0f, 16.0f, 0.25f));
   params.push_back(std::make_unique<juce::AudioParameterFloat>(
       "DELAY_PROB", "Delay Prob", 0.0f, 1.0f, 0.0f));
   params.push_back(std::make_unique<juce::AudioParameterFloat>(
-      "DELAY_MAX", "Max Delay (beats)", 0.0f, 2.0f, 0.5f));
+      "DELAY_MAX", "Max Delay (beats)", 0.0f, 8.0f, 0.5f));
   
   params.push_back(std::make_unique<juce::AudioParameterChoice>(
       "INPUT_SOURCE", "Input Source", juce::StringArray{"Live", "Chord"}, 0));
-
-  // HPF_FREQ: Skew 0.3 for better precision in low frequencies
-  params.push_back(std::make_unique<juce::AudioParameterFloat>(
-      "HPF_FREQ", "HPF Freq", juce::NormalisableRange<float>(20.0f, 5000.0f, 1.0f, 0.3f), 20.0f));
 
   params.push_back(std::make_unique<juce::AudioParameterFloat>(
       "GRAIN_FILTER_DEPTH", "Grn Filt Prob", 0.0f, 1.0f, 0.5f));
@@ -379,6 +361,9 @@ CrystalVstAudioProcessor::createParameterLayout() {
 
   params.push_back(std::make_unique<juce::AudioParameterFloat>(
       "PAN_SPEED", "Pan Speed", 0.0f, 1.0f, 0.0f));
+
+  params.push_back(std::make_unique<juce::AudioParameterFloat>(
+      "MORPH_PROB", "Morph Prob", 0.0f, 1.0f, 0.0f));
 
   return {params.begin(), params.end()};
 }

@@ -54,10 +54,10 @@ private:
   juce::Slider loopCycleSlider;
   juce::Slider delayProbSlider;
   juce::Slider delayMaxSlider;
-  juce::Slider hpfFreqSlider;
   juce::Slider grnFiltSlider;
   juce::Slider grnResSlider;
   juce::Slider panSpeedSlider;
+  juce::Slider morphSlider;
   juce::ComboBox sourceSelector;
 
   std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>
@@ -87,12 +87,11 @@ private:
   std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>
       delayMaxAttachment;
   std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>
-      hpfFreqAttachment;
-  std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>
       grnFiltAttachment;
   std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>
       grnResAttachment;
   std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> panSpeedAttachment;
+  std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> morphAttachment;
   std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment>
       sourceAttachment;
 
@@ -109,10 +108,10 @@ private:
   juce::Label loopCycleLabel;
   juce::Label delayProbLabel;
   juce::Label delayMaxLabel;
-  juce::Label hpfFreqLabel;
   juce::Label grnFiltLabel;
   juce::Label grnResLabel;
   juce::Label panSpeedLabel;
+  juce::Label morphLabel;
   juce::Label sourceLabel;
 
   void setupSlider(juce::Slider &slider, juce::Label &label,

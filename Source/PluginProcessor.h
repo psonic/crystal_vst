@@ -32,20 +32,39 @@ struct Grain {
   float filterEndFreq = 20000.0f;
   float filterRes = 0.707f;
   bool filterActive = false;
+  bool hasMorphed = false;
 
   void process(const juce::AudioBuffer<float> &sourceBuffer,
                juce::AudioBuffer<float> &outputBuffer, int writePtr,
-               int bufferSize, double sampleRate) {
+               int bufferSize, double sampleRate, float morphProb, std::mt19937& randomEngine) {
     if (!active) {
         if (waitingToStart) {
             if (--delaySamples <= 0) {
                 waitingToStart = false;
                 active = true;
                 currentSample = 0;
+                hasMorphed = false;
                 v1 = 0.0f; v2 = 0.0f; // Reset filter state
             }
         }
         return;
+    }
+
+    // Duration Morphing Logic
+    if (!hasMorphed && morphProb > 0.001f) {
+        std::uniform_real_distribution<float> rand01(0.0f, 1.0f);
+        if (rand01(randomEngine) < (morphProb * 0.01f)) { // morphProb is 0-1.0 from param
+            hasMorphed = true;
+            bool doubleSize = rand01(randomEngine) > 0.5f;
+            float ratio = doubleSize ? 2.0f : 0.5f;
+            
+            // Scale duration and current position to maintain relative phase in the window
+            int newDuration = (int)((float)duration * ratio);
+            if (newDuration > 10) { // Safety minimum
+                currentSample = (int)((float)currentSample * ratio);
+                duration = newDuration;
+            }
+        }
     }
 
     float phase = (float)currentSample * pitchRatio;
@@ -191,12 +210,10 @@ private:
   // Effects
   juce::dsp::Reverb reverb;
   juce::dsp::Phaser<float> phaser;
-  juce::dsp::ProcessorChain<juce::dsp::IIR::Filter<float>> filterChain;
   
   // Smoothed Parameters for Glitch-Free changes
   juce::LinearSmoothedValue<float> smoothedGain;
   juce::LinearSmoothedValue<float> smoothedMix;
-  juce::LinearSmoothedValue<float> smoothedHpfFreq;
   
   // FX Modulation Smoothers
   juce::LinearSmoothedValue<float> smoothedReverbRoom;

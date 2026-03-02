@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.22)
 
+# Universal Binary: supports both Apple Silicon (arm64) and Intel (x86_64)
+set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Build architectures")
+
 project(CrystalVST VERSION 0.1.0)
 
 # Set the standard for C++ (JUCE 8 requires C++17 or later)

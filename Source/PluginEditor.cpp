@@ -21,10 +21,10 @@ CrystalVstAudioProcessorEditor::CrystalVstAudioProcessorEditor(
   setupSlider(loopCycleSlider, loopCycleLabel, "LOOP CYCLE", "LOOP_BEATS");
   setupSlider(delayProbSlider, delayProbLabel, "DELAY %", "DELAY_PROB");
   setupSlider(delayMaxSlider, delayMaxLabel, "DELAY MAX", "DELAY_MAX");
-  setupSlider(hpfFreqSlider, hpfFreqLabel, "HPF FREQ", "HPF_FREQ");
   setupSlider(grnFiltSlider, grnFiltLabel, "GRN FILT", "GRAIN_FILTER_DEPTH");
   setupSlider(grnResSlider, grnResLabel, "GRN RES", "GRAIN_FILTER_RES");
   setupSlider(panSpeedSlider, panSpeedLabel, "PAN SPEED", "PAN_SPEED");
+  setupSlider(morphSlider, morphLabel, "MORPH %", "MORPH_PROB");
 
   densityAttachment =
       std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
@@ -65,9 +65,6 @@ CrystalVstAudioProcessorEditor::CrystalVstAudioProcessorEditor(
   delayMaxAttachment =
       std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
           audioProcessor.apvts, "DELAY_MAX", delayMaxSlider);
-  hpfFreqAttachment =
-      std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-          audioProcessor.apvts, "HPF_FREQ", hpfFreqSlider);
   grnFiltAttachment =
       std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
           audioProcessor.apvts, "GRAIN_FILTER_DEPTH", grnFiltSlider);
@@ -77,6 +74,9 @@ CrystalVstAudioProcessorEditor::CrystalVstAudioProcessorEditor(
   panSpeedAttachment =
       std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
           audioProcessor.apvts, "PAN_SPEED", panSpeedSlider);
+  morphAttachment =
+      std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+          audioProcessor.apvts, "MORPH_PROB", morphSlider);
 
   sourceSelector.addItem("LIVE INPUT", 1);
   sourceSelector.addItem("PSYCH CHORD", 2);
@@ -88,7 +88,7 @@ CrystalVstAudioProcessorEditor::CrystalVstAudioProcessorEditor(
 
   sourceLabel.setText("INPUT SOURCE", juce::dontSendNotification);
   sourceLabel.setJustificationType(juce::Justification::centred);
-  sourceLabel.setColour(juce::Label::textColourId, juce::Colours::magenta);
+  sourceLabel.setColour(juce::Label::textColourId, juce::Colours::grey);
   addAndMakeVisible(sourceLabel);
 
   setSize(900, 600);
@@ -107,10 +107,10 @@ CrystalVstAudioProcessorEditor::CrystalVstAudioProcessorEditor(
   loopCycleSlider.onValueChange();
   delayProbSlider.onValueChange();
   delayMaxSlider.onValueChange();
-  hpfFreqSlider.onValueChange();
   grnFiltSlider.onValueChange();
   grnResSlider.onValueChange();
   panSpeedSlider.onValueChange();
+  morphSlider.onValueChange();
 
   startTimerHz(30);
 }
@@ -136,15 +136,18 @@ void CrystalVstAudioProcessorEditor::setupSlider(juce::Slider &slider,
   // Custom Crystal Style
   slider.setColour(juce::Slider::thumbColourId, juce::Colours::cyan);
   slider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colours::magenta.withAlpha(0.6f));
-  slider.setColour(juce::Slider::rotarySliderOutlineColourId, juce::Colours::white.withAlpha(0.1f));
+  // Professional Sober Style
+  slider.setColour(juce::Slider::thumbColourId, juce::Colours::lightgrey);
+  slider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF3A4A5A)); // Steel Blue
+  slider.setColour(juce::Slider::rotarySliderOutlineColourId, juce::Colours::white.withAlpha(0.05f));
   
   addAndMakeVisible(slider);
 
   label.setJustificationType(juce::Justification::centred);
   label.setFont(juce::FontOptions(14.0f, juce::Font::bold));
-  label.setColour(juce::Label::textColourId, juce::Colours::cyan);
+  label.setColour(juce::Label::textColourId, juce::Colours::lightgrey);
   
-  // Dynamic Label Update
+  // Dynamic Label Update with Units
   slider.onValueChange = [this, &slider, &label, name, paramId] {
       juce::String valStr;
       if (auto* param = audioProcessor.apvts.getParameter(paramId)) {
@@ -152,33 +155,42 @@ void CrystalVstAudioProcessorEditor::setupSlider(juce::Slider &slider,
       } else {
           valStr = juce::String(slider.getValue(), 2);
       }
-      label.setText(name + ": " + valStr, juce::dontSendNotification);
+
+      // Append Units based on parameter ID
+      juce::String unit = "";
+      if (paramId == "DENSITY") unit = " gr/bt";
+      else if (paramId == "LIFE_MIN" || paramId == "LIFE_MAX") unit = " bt";
+      else if (paramId == "PITCH_MIN" || paramId == "PITCH_MAX") unit = " oct";
+      else if (paramId == "MIX" || paramId == "REVERSE_PROB" || paramId == "DELAY_PROB" || paramId == "GRAIN_FILTER_DEPTH") unit = "%";
+      else if (paramId == "GAIN") unit = "x";
+      else if (paramId == "ATTACK" || paramId == "DECAY") unit = " ms";
+      else if (paramId == "LOOP_BEATS" || paramId == "DELAY_MAX") unit = " bt";
+      else if (paramId == "HPF_FREQ") unit = " Hz";
+      else if (paramId == "GRAIN_FILTER_RES") unit = " Q";
+      else if (paramId == "PAN_SPEED") unit = " spd";
+      else if (paramId == "MORPH_PROB") unit = "%";
+
+      label.setText(name + ": " + valStr + unit, juce::dontSendNotification);
   };
   
   addAndMakeVisible(label);
 }
 
 void CrystalVstAudioProcessorEditor::paint(juce::Graphics &g) {
-  // Strange Background: gradient mesh feel
-  juce::ColourGradient grad(juce::Colour(0xFF0F0F1F), 0, 0,
-                             juce::Colour(0xFF1A0A2A), getWidth(), getHeight(), true);
-  g.setGradientFill(grad);
-  g.fillAll();
+  // Sober background: dark charcoal gray
+  g.fillAll(juce::Colour(0xFF151515));
 
-  // Decorative "strange" crystals/shapes
-  g.setColour(juce::Colours::cyan.withAlpha(0.05f));
-  juce::Path p;
-  p.addEllipse(getWidth() * 0.2f, getHeight() * 0.3f, 400, 400);
-  p.addEllipse(getWidth() * 0.6f, getHeight() * 0.1f, 300, 300);
-  g.fillPath(p);
+  // Subtle border/structure
+  g.setColour(juce::Colours::white.withAlpha(0.05f));
+  g.drawRect(getLocalBounds(), 2);
 
   g.setColour(juce::Colours::white);
-  g.setFont(juce::FontOptions(32.0f, juce::Font::bold));
+  g.setFont(juce::FontOptions(28.0f, juce::Font::bold));
   g.drawText("CRYSTAL GRANULAR", 20, 20, 400, 40, juce::Justification::left);
   
-  g.setColour(juce::Colours::magenta.withAlpha(0.5f));
-  g.setFont(juce::FontOptions(14.0f));
-  g.drawText("v14 KINETIC RANGES", 20, 55, 400, 20, juce::Justification::left);
+  g.setColour(juce::Colours::grey);
+  g.setFont(juce::FontOptions(12.0f));
+  g.drawText("V14 PRO PERFORMANCE", 22, 55, 400, 20, juce::Justification::left);
 }
 
 void CrystalVstAudioProcessorEditor::resized() {
@@ -246,9 +258,9 @@ void CrystalVstAudioProcessorEditor::resized() {
   decaySlider.setBounds(spaceX + cw + 10, spaceY, cw, ch);
   decayLabel.setBounds(decaySlider.getBounds().translated(0, ch - 20).withHeight(20));
 
-  hpfFreqSlider.setBounds(spaceX + (cw + 10) * 2, spaceY, cw, ch);
-  hpfFreqLabel.setBounds(hpfFreqSlider.getBounds().translated(0, ch - 20).withHeight(20));
-
-  panSpeedSlider.setBounds(spaceX + (cw + 10) * 3, spaceY, cw, ch);
+  panSpeedSlider.setBounds(spaceX + (cw + 10) * 2, spaceY, cw, ch);
   panSpeedLabel.setBounds(panSpeedSlider.getBounds().translated(0, ch - 20).withHeight(20));
+
+  morphSlider.setBounds(spaceX + (cw + 10) * 3, spaceY, cw, ch);
+  morphLabel.setBounds(morphSlider.getBounds().translated(0, ch - 20).withHeight(20));
 }
